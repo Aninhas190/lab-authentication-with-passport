@@ -7,7 +7,15 @@ const passport = require('passport');
 
 const routeGuard = require('./../middleware/route-guard');
 
+authenticationRouter.get('/github', passport.authenticate('github', {
+  successRedirect: '/',
+  failureRedirect:'/error'
+}));
 
+authenticationRouter.get('/github-callback', passport.authenticate('github', {
+  successRedirect: '/',
+  failureRedirect:'/error'
+}));
 
 authenticationRouter.get('/sign-up', (req, res, next) => {
   res.render('authentication/sign-up');

@@ -2,10 +2,12 @@
 
 const passport = require('passport');
 const passportLocal = require('passport-local');
+const passportGithub = require('passport-github');
 
 const bcrypt = require('bcryptjs');
 // Passport Strategy configuration
 const PassportLocalStrategy = passportLocal.Strategy;
+const PassportGithubStrategy = passportGithub.Strategy;
 
 const User = require('./models/user');
 //define a serialization and deserialization process
@@ -19,6 +21,31 @@ passport.deserializeUser((id, callback) => {
     .then(user => callback(null, user))
     .catch(error => callback(error));
 });
+
+//social Log in
+passport.use(
+  new PassportGithubStrategy({
+    clientID: process.env.GITHUB_API_CLIENT_ID,
+    clientSecret: process.env.GITHUB_API_CLIENT_SECRET,
+    callbackURL: 'http://localhost:3000/authentication/github-callback'
+  }, (accessToken, refreshToken, profile, callback) => {
+    const name = profile.displayName;
+    const photo = profile._json.avatar_url;
+    const githubId = profile.id;
+  
+    User.findOne({githubId})
+      .then(user => {
+        if (!user) {
+          return User.create({ name, photo, githubId });
+        } else {
+          return Promise.resolve(user);
+        }
+      })
+      .then(user => callback(null, user))
+      .catch(error => callback(error));
+    }
+  )
+);
 
 //user sign Up
 passport.use(
@@ -50,7 +77,7 @@ passport.use('sign-in',
       if (result) {
         callback(null, user);
       } else {
-        return Promisse.reject(new Error('Password does not match'));
+        return Promise.reject(new Error('Password does not match'));
       }
     })
     .catch(error => callback(error));
